@@ -1,4 +1,4 @@
-# Backend Tooling
+# Backend Tooling [![Version](https://img.shields.io/github/v/tag/marclang64/backend-tooling?sort=semver&label=version)](https://github.com/marclang64/backend-tooling/releases)
 
 Reusable PHP development tooling configurations for consistent code style, static analysis, and testing.
 
