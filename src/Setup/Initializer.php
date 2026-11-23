@@ -115,6 +115,7 @@ CONFIG
         }
 
         $composer['scripts'] = $scripts;
+
         if ($composer !== json_decode($contents, true, 512, JSON_THROW_ON_ERROR)) {
             $encoded = json_encode(
                 $composer,
@@ -131,6 +132,8 @@ CONFIG
         }
 
         $this->updateGitignore($root);
+        $this->updateGitattributes($root);
+
         echo "\nBackend Tooling initialized.\n";
         echo "Run: composer update --lock\n";
         echo "Then: composer lint:style, composer lint:types, composer test\n";
@@ -142,22 +145,34 @@ CONFIG
             echo '[SKIP] ' . basename($file) . " already exists\n";
             return;
         }
+
         if (file_put_contents($file, $contents . "\n") === false) {
             throw new RuntimeException('Could not create ' . $file);
         }
+
         echo '[OK] Created ' . basename($file) . "\n";
     }
 
     private function createSampleTestIfNeeded(string $root): void
     {
         $tests = $root . '/tests';
+
         if (!is_dir($tests) && !mkdir($tests, 0777, true) && !is_dir($tests)) {
             throw new RuntimeException('Could not create tests directory.');
         }
 
-        $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($tests, \FilesystemIterator::SKIP_DOTS));
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($tests, \FilesystemIterator::SKIP_DOTS)
+        );
+
         foreach ($iterator as $file) {
-            if ($file->isFile() && (str_ends_with($file->getFilename(), 'Test.php') || str_ends_with($file->getFilename(), '.phpt'))) {
+            if (
+                $file->isFile()
+                && (
+                    str_ends_with($file->getFilename(), 'Test.php')
+                    || str_ends_with($file->getFilename(), '.phpt')
+                )
+            ) {
                 echo "[SKIP] Existing tests found\n";
                 return;
             }
@@ -187,24 +202,84 @@ TEST
     {
         $path = $root . '/.gitignore';
         $contents = is_file($path) ? file_get_contents($path) : '';
+
         if ($contents === false) {
             throw new RuntimeException('Cannot read .gitignore.');
         }
-        $required = ['/vendor/', '/.php-cs-fixer.cache', '/.php-cs-fixer.php', '/.phpunit.cache/', '/.phpunit.result.cache'];
+
+        $required = [
+            '/vendor/',
+            '/.php-cs-fixer.cache',
+            '/.php-cs-fixer.php',
+            '/.phpunit.cache/',
+            '/.phpunit.result.cache',
+        ];
+
         $lines = preg_split('/\R/', $contents) ?: [];
-        $missing = array_values(array_filter($required, static fn(string $entry): bool => !in_array($entry, $lines, true)));
+
+        $missing = array_values(array_filter(
+            $required,
+            static fn(string $entry): bool => !in_array($entry, $lines, true)
+        ));
+
         if ($missing === []) {
             echo "[SKIP] .gitignore already configured\n";
             return;
         }
+
         $newContents = rtrim($contents, "\r\n");
+
         if ($newContents !== '') {
             $newContents .= "\n\n";
         }
+
         $newContents .= "# Backend Tooling\n" . implode("\n", $missing) . "\n";
+
         if (file_put_contents($path, $newContents) === false) {
             throw new RuntimeException('Could not update .gitignore.');
         }
+
         echo "[OK] Updated .gitignore\n";
+    }
+
+    private function updateGitattributes(string $root): void
+    {
+        $path = $root . '/.gitattributes';
+        $contents = is_file($path) ? file_get_contents($path) : '';
+
+        if ($contents === false) {
+            throw new RuntimeException('Cannot read .gitattributes.');
+        }
+
+        $required = [
+            '* text=auto',
+            '*.php text eol=lf',
+        ];
+
+        $lines = preg_split('/\R/', $contents) ?: [];
+
+        $missing = array_values(array_filter(
+            $required,
+            static fn(string $entry): bool => !in_array($entry, $lines, true)
+        ));
+
+        if ($missing === []) {
+            echo "[SKIP] .gitattributes already configured\n";
+            return;
+        }
+
+        $newContents = rtrim($contents, "\r\n");
+
+        if ($newContents !== '') {
+            $newContents .= "\n\n";
+        }
+
+        $newContents .= "# Backend Tooling\n" . implode("\n", $missing) . "\n";
+
+        if (file_put_contents($path, $newContents) === false) {
+            throw new RuntimeException('Could not update .gitattributes.');
+        }
+
+        echo "[OK] Updated .gitattributes\n";
     }
 }
