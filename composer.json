@@ -7,7 +7,9 @@
         "php": "^8.5",
         "friendsofphp/php-cs-fixer": "^3.95",
         "phpstan/phpstan": "^2.3",
-        "phpunit/phpunit": "^13.4",
+        "phpunit/phpunit": "^13.4"
+    },
+    "require-dev": {
         "symfony/process": "^8.1"
     },
     "scripts": {
