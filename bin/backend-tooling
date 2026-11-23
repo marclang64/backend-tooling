@@ -5,10 +5,15 @@ declare(strict_types=1);
 
 use BackendTooling\Setup\Initializer;
 
-$autoload = dirname(__DIR__, 2) . '/autoload.php';
+$autoload = dirname(__DIR__, 3) . '/autoload.php';
 
 if (!is_file($autoload)) {
     $autoload = dirname(__DIR__) . '/vendor/autoload.php';
+}
+
+if (!is_file($autoload)) {
+    fwrite(STDERR, "Composer autoloader not found.\n");
+    exit(1);
 }
 
 require $autoload;
