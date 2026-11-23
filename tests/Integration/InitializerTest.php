@@ -22,9 +22,11 @@ final class InitializerTest extends TestCase
             new RecursiveDirectoryIterator($this->directory, FilesystemIterator::SKIP_DOTS),
             RecursiveIteratorIterator::CHILD_FIRST
         );
+
         foreach ($files as $file) {
             $file->isDir() ? rmdir($file->getPathname()) : unlink($file->getPathname());
         }
+
         rmdir($this->directory);
     }
 
@@ -32,10 +34,26 @@ final class InitializerTest extends TestCase
     {
         (new Initializer())->run($this->directory);
 
-        foreach (['.php-cs-fixer.dist.php', 'phpstan.neon.dist', 'phpunit.xml.dist', 'tests/ExampleTest.php', '.gitignore'] as $file) {
+        $expectedFiles = [
+            '.php-cs-fixer.dist.php',
+            'phpstan.neon.dist',
+            'phpunit.xml.dist',
+            'tests/ExampleTest.php',
+            '.gitignore',
+            '.gitattributes',
+        ];
+
+        foreach ($expectedFiles as $file) {
             self::assertFileExists($this->directory . '/' . $file);
         }
-        $composer = json_decode((string) file_get_contents($this->directory . '/composer.json'), true, flags: JSON_THROW_ON_ERROR);
+
+        $composer = json_decode(
+            (string) file_get_contents($this->directory . '/composer.json'),
+            true,
+            flags: JSON_THROW_ON_ERROR
+        );
+
+        self::assertSame('^8.5', $composer['require']['php']);
         self::assertSame('phpunit', $composer['scripts']['test']);
         self::assertSame('phpstan analyse --no-progress', $composer['scripts']['lint:types']);
     }
@@ -44,24 +62,107 @@ final class InitializerTest extends TestCase
     {
         $initializer = new Initializer();
         $initializer->run($this->directory);
+
         $first = [];
-        foreach (['composer.json', '.gitignore', '.php-cs-fixer.dist.php', 'phpstan.neon.dist', 'phpunit.xml.dist', 'tests/ExampleTest.php'] as $file) {
+
+        $files = [
+            'composer.json',
+            '.gitignore',
+            '.gitattributes',
+            '.php-cs-fixer.dist.php',
+            'phpstan.neon.dist',
+            'phpunit.xml.dist',
+            'tests/ExampleTest.php',
+        ];
+
+        foreach ($files as $file) {
             $first[$file] = file_get_contents($this->directory . '/' . $file);
         }
+
         $initializer->run($this->directory);
+
         foreach ($first as $file => $contents) {
-            self::assertSame($contents, file_get_contents($this->directory . '/' . $file), $file);
+            self::assertSame(
+                $contents,
+                file_get_contents($this->directory . '/' . $file),
+                $file
+            );
         }
     }
 
     public function testPreservesExistingTestsAndScripts(): void
     {
         mkdir($this->directory . '/tests');
-        file_put_contents($this->directory . '/tests/RouterTest.php', '<?php // existing test');
-        file_put_contents($this->directory . '/composer.json', '{"scripts":{"test":"custom-test"}}');
+
+        file_put_contents(
+            $this->directory . '/tests/RouterTest.php',
+            '<?php // existing test'
+        );
+
+        file_put_contents(
+            $this->directory . '/composer.json',
+            '{"scripts":{"test":"custom-test"}}'
+        );
+
         (new Initializer())->run($this->directory);
+
         self::assertFileDoesNotExist($this->directory . '/tests/ExampleTest.php');
-        $composer = json_decode((string) file_get_contents($this->directory . '/composer.json'), true, flags: JSON_THROW_ON_ERROR);
+
+        $composer = json_decode(
+            (string) file_get_contents($this->directory . '/composer.json'),
+            true,
+            flags: JSON_THROW_ON_ERROR
+        );
+
         self::assertSame('custom-test', $composer['scripts']['test']);
+    }
+
+    public function testCreatesGitAttributesWithRequiredRules(): void
+    {
+        (new Initializer())->run($this->directory);
+
+        $path = $this->directory . '/.gitattributes';
+
+        self::assertFileExists($path);
+
+        $contents = (string) file_get_contents($path);
+
+        self::assertStringContainsString('* text=auto', $contents);
+        self::assertStringContainsString('*.php text eol=lf', $contents);
+    }
+
+    public function testPreservesExistingGitAttributes(): void
+    {
+        $path = $this->directory . '/.gitattributes';
+
+        $existing = "*.md text eol=lf\n* text=auto\n*.php text eol=lf\n";
+
+        file_put_contents($path, $existing);
+
+        (new Initializer())->run($this->directory);
+
+        self::assertSame($existing, file_get_contents($path));
+    }
+
+    public function testAddsMissingGitAttributesWithoutDuplicates(): void
+    {
+        $path = $this->directory . '/.gitattributes';
+
+        file_put_contents(
+            $path,
+            "*.md text eol=lf\n* text=auto\n"
+        );
+
+        $initializer = new Initializer();
+
+        $initializer->run($this->directory);
+        $initializer->run($this->directory);
+
+        $contents = (string) file_get_contents($path);
+        $lines = preg_split('/\R/', $contents) ?: [];
+
+        self::assertContains('*.md text eol=lf', $lines);
+        self::assertSame(1, count(array_keys($lines, '* text=auto', true)));
+        self::assertSame(1, count(array_keys($lines, '*.php text eol=lf', true)));
     }
 }
