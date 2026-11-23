@@ -1,0 +1,29 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use BackendTooling\Setup\Initializer;
+
+$autoload = dirname(__DIR__, 2) . '/autoload.php';
+
+if (!is_file($autoload)) {
+    $autoload = dirname(__DIR__) . '/vendor/autoload.php';
+}
+
+require $autoload;
+
+$command = $argv[1] ?? null;
+
+if ($command !== 'init') {
+    fwrite(STDERR, "Usage: backend-tooling init\n");
+    exit(1);
+}
+
+try {
+    $initializer = new Initializer();
+    $initializer->run(getcwd());
+} catch (Throwable $exception) {
+    fwrite(STDERR, $exception->getMessage() . PHP_EOL);
+    exit(1);
+}

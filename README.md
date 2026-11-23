@@ -130,3 +130,25 @@ The integration tests create isolated temporary consumer projects, install the p
 ## License
 
 MIT
+
+## Quick setup for consumer projects (v1.1.0)
+
+Install the package as a development dependency, then initialize the project:
+
+```bash
+composer require --dev marclang64/backend-tooling:^1.1
+vendor/bin/backend-tooling init
+```
+
+On Windows PowerShell, run `vendor\bin\backend-tooling init`.
+
+The initializer creates `.php-cs-fixer.dist.php`, `phpstan.neon.dist`, and
+`phpunit.xml.dist`; registers missing Composer scripts; updates `.gitignore`;
+and creates `tests/ExampleTest.php` only when no PHPUnit tests exist.
+It creates `src/` when missing, does not overwrite existing configuration files,
+and can be run repeatedly. Review generated files for your project's layout.
+
+Then run `composer lint:style`, `composer lint:types`, and `composer test`.
+
+**Note:** The sample test verifies PHPUnit setup only; replace it with real
+project tests. Composer scripts are added to the root project's `composer.json`.

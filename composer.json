@@ -3,6 +3,14 @@
     "description": "Reusable tooling configurations for modern PHP development",
     "type": "library",
     "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "BackendTooling\\": "src/"
+        }
+    },
+    "bin": [
+        "bin/backend-tooling"
+    ],
     "require": {
         "php": "^8.5",
         "friendsofphp/php-cs-fixer": "^3.95",
