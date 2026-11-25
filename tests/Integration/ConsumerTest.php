@@ -84,9 +84,7 @@ final class ConsumerTest extends TestCase
 
     public function testPhpCsFixerFormatsCode(): void
     {
-        $this->createConsumerProject([
-            'friendsofphp/php-cs-fixer' => '^3.95',
-        ]);
+        $this->createConsumerProject();
 
         $this->installConsumerDependencies();
 
@@ -156,9 +154,8 @@ PHP;
         );
     }
 
-    private function createConsumerProject(
-        array $dependencies = []
-    ): void {
+    private function createConsumerProject(): void
+    {
         $packagePath = dirname(__DIR__, 2);
 
         $composerJson = [
@@ -173,12 +170,10 @@ PHP;
                     ],
                 ],
             ],
-            'require-dev' => array_merge(
-                [
-                    'marclang64/backend-tooling' => '@dev',
-                ],
-                $dependencies
-            ),
+            'require' => ['php' => '^8.5'],
+            'require-dev' => [
+                'marclang64/backend-tooling' => '@dev',
+            ],
         ];
 
         file_put_contents(
@@ -227,9 +222,7 @@ PHP;
 
     public function testPhpStanDetectsTypeErrors(): void
     {
-        $this->createConsumerProject([
-            'phpstan/phpstan' => '^2.3',
-        ]);
+        $this->createConsumerProject();
 
         $this->installConsumerDependencies();
 
@@ -291,9 +284,7 @@ PHP;
 
     public function testPhpStanAcceptsValidCode(): void
     {
-        $this->createConsumerProject([
-            'phpstan/phpstan' => '^2.3',
-        ]);
+        $this->createConsumerProject();
 
         $this->installConsumerDependencies();
 
@@ -351,9 +342,7 @@ PHP;
 
     public function testConsumerCanRunPhpUnit(): void
     {
-        $this->createConsumerProject([
-            'phpunit/phpunit' => '^13.4',
-        ]);
+        $this->createConsumerProject();
 
         $this->installConsumerDependencies();
 
@@ -420,4 +409,65 @@ PHP;
             $process->getOutput()
         );
     }
+
+    public function testRectorDetectsAndAppliesRefactoring(): void
+    {
+        $this->createConsumerProject();
+        $this->installConsumerDependencies();
+
+        $this->assertFileExists($this->tempDir . '/vendor/bin/rector');
+        $init = new Process(
+            [PHP_BINARY, 'vendor/bin/backend-tooling', 'init'],
+            $this->tempDir
+        );
+        $init->mustRun();
+
+        $sourceFile = $this->tempDir . '/src/Example.php';
+        $source = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+final class Example
+{
+    private int $value;
+
+    public function __construct(int $value)
+    {
+        $this->value = $value;
+    }
+
+    public function getValue(): int
+    {
+        return $this->value;
+    }
+}
+PHP;
+        file_put_contents($sourceFile, $source);
+
+        $dryRun = Process::fromShellCommandline('composer lint:rector', $this->tempDir);
+        $dryRun->setTimeout(120);
+        $dryRun->run();
+        self::assertSame(2, $dryRun->getExitCode(), $dryRun->getOutput() . $dryRun->getErrorOutput());
+        self::assertStringContainsString(
+            'ClassPropertyAssignToConstructorPromotionRector',
+            $dryRun->getOutput() . $dryRun->getErrorOutput()
+        );
+        self::assertSame($source, file_get_contents($sourceFile));
+
+        $fix = Process::fromShellCommandline('composer fix:rector', $this->tempDir);
+        $fix->setTimeout(120);
+        $fix->mustRun();
+        $refactored = (string) file_get_contents($sourceFile);
+        self::assertStringContainsString('private int $value', $refactored);
+        self::assertStringNotContainsString('$this->value = $value;', $refactored);
+        self::assertNotSame($source, $refactored);
+
+        foreach (['fix:style', 'lint:style', 'lint:types', 'lint:rector', 'test'] as $script) {
+            $process = Process::fromShellCommandline('composer ' . $script, $this->tempDir);
+            $process->setTimeout(120);
+            $process->mustRun();
+        }
+    }
+
 }

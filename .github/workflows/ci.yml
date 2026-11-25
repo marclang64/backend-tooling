@@ -29,5 +29,8 @@ jobs:
       - name: Run static analysis
         run: composer lint:types
 
+      - name: Check refactoring
+        run: composer lint:rector
+
       - name: Run tests
         run: composer test

@@ -15,7 +15,8 @@
         "php": "^8.5",
         "friendsofphp/php-cs-fixer": "^3.95",
         "phpstan/phpstan": "^2.3",
-        "phpunit/phpunit": "^13.4"
+        "phpunit/phpunit": "^13.4",
+        "rector/rector": "^2.9.2"
     },
     "require-dev": {
         "symfony/process": "^8.1"
@@ -24,6 +25,8 @@
         "lint:style": "php-cs-fixer fix --dry-run --diff",
         "fix:style": "php-cs-fixer fix",
         "lint:types": "phpstan analyse --no-progress",
-        "test": "phpunit"
+        "test": "phpunit",
+        "lint:rector": "rector process --dry-run",
+        "fix:rector": "rector process"
     }
 }

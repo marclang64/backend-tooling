@@ -13,6 +13,8 @@ final class Initializer
         'lint:style' => 'php-cs-fixer fix --dry-run --diff',
         'fix:style' => 'php-cs-fixer fix',
         'lint:types' => 'phpstan analyse --no-progress',
+        'lint:rector' => 'rector process --dry-run',
+        'fix:rector' => 'rector process',
         'test' => 'phpunit',
     ];
 
@@ -92,6 +94,22 @@ CONFIG
 CONFIG
         );
 
+        $this->createIfMissing($root . '/rector.php', <<<'CONFIG'
+<?php
+
+declare(strict_types=1);
+
+use Rector\Config\RectorConfig;
+
+return RectorConfig::configure()
+    ->withPaths([
+        __DIR__ . '/src',
+        __DIR__ . '/tests',
+    ])
+    ->withSets([__DIR__ . '/vendor/marclang64/backend-tooling/configs/rector.php']);
+CONFIG
+        );
+
         $requirements = $composer['require'] ?? [];
         if (!is_array($requirements) || ($requirements !== [] && array_is_list($requirements))) {
             throw new RuntimeException('composer.json require must be an object.');
@@ -136,7 +154,7 @@ CONFIG
 
         echo "\nBackend Tooling initialized.\n";
         echo "Run: composer update --lock\n";
-        echo "Then: composer lint:style, composer lint:types, composer test\n";
+        echo "Then: composer lint:style, composer lint:types, composer lint:rector, composer test\n";
     }
 
     private function createIfMissing(string $file, string $contents): void

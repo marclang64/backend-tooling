@@ -38,6 +38,7 @@ final class InitializerTest extends TestCase
             '.php-cs-fixer.dist.php',
             'phpstan.neon.dist',
             'phpunit.xml.dist',
+            'rector.php',
             'tests/ExampleTest.php',
             '.gitignore',
             '.gitattributes',
@@ -54,6 +55,8 @@ final class InitializerTest extends TestCase
         );
 
         self::assertSame('^8.5', $composer['require']['php']);
+        self::assertSame('rector process --dry-run', $composer['scripts']['lint:rector']);
+        self::assertSame('rector process', $composer['scripts']['fix:rector']);
         self::assertSame('phpunit', $composer['scripts']['test']);
         self::assertSame('phpstan analyse --no-progress', $composer['scripts']['lint:types']);
     }
@@ -72,6 +75,7 @@ final class InitializerTest extends TestCase
             '.php-cs-fixer.dist.php',
             'phpstan.neon.dist',
             'phpunit.xml.dist',
+            'rector.php',
             'tests/ExampleTest.php',
         ];
 
@@ -115,6 +119,28 @@ final class InitializerTest extends TestCase
         );
 
         self::assertSame('custom-test', $composer['scripts']['test']);
+    }
+
+    public function testPreservesExistingRectorConfigurationAndScripts(): void
+    {
+        $path = $this->directory . '/rector.php';
+        $existing = '<?php // custom configuration';
+        file_put_contents($path, $existing);
+        file_put_contents(
+            $this->directory . '/composer.json',
+            '{"scripts":{"lint:rector":"custom-lint","fix:rector":"custom-fix"}}'
+        );
+
+        (new Initializer())->run($this->directory);
+
+        self::assertSame($existing, file_get_contents($path));
+        $composer = json_decode(
+            (string) file_get_contents($this->directory . '/composer.json'),
+            true,
+            flags: JSON_THROW_ON_ERROR
+        );
+        self::assertSame('custom-lint', $composer['scripts']['lint:rector']);
+        self::assertSame('custom-fix', $composer['scripts']['fix:rector']);
     }
 
     public function testCreatesGitAttributesWithRequiredRules(): void

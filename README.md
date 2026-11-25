@@ -1,20 +1,19 @@
 # Backend Tooling [![Version](https://img.shields.io/github/v/tag/marclang64/backend-tooling?sort=semver&label=version)](https://github.com/marclang64/backend-tooling/releases)
 
-Reusable PHP development tooling configurations for consistent code style, static analysis, and testing.
-
-This package provides shared configurations for **PHP-CS-Fixer** and **PHPStan**, alongside integration tests that verify their compatibility with real consumer projects.
+Reusable PHP development tooling for consistent code style, static analysis, automated refactoring, and testing.
 
 ## Features
 
 - **PHP-CS-Fixer** — PSR-12-based formatting with additional opinionated rules.
-- **PHPStan** — Static analysis with a shared baseline configuration.
-- **PHPUnit** — Automated integration tests for package installation and tooling compatibility.
-- **GitHub Actions** — Continuous integration for coding standards, static analysis, and tests.
-- **Composer** — Installable directly from GitHub without Packagist.
+- **PHPStan** — Static analysis at level 6.
+- **Rector** — Automated refactoring with a conservative shared rule set.
+- **PHPUnit** — Automated testing.
+- **Initializer** — Generates project configuration and scripts without overwriting existing files.
+- **GitHub Actions** — Continuous integration for package quality checks.
 
 ## Requirements
 
-- PHP 8.5 or newer, within the supported Composer version constraint
+- PHP ^8.5
 - Composer 2
 
 ## Installation
@@ -23,131 +22,78 @@ Add the GitHub repository to your project's `composer.json`:
 
 ```json
 {
-  "repositories": [
-    {
-      "type": "vcs",
-      "url": "https://github.com/marclang64/backend-tooling"
-    }
-  ]
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/marclang64/backend-tooling"
+        }
+    ]
 }
 ```
 
-Install the package and the development tools:
+Install the package as a development dependency after v1.3.0 is released:
 
 ```bash
-composer require --dev marclang64/backend-tooling:@dev
-composer require --dev friendsofphp/php-cs-fixer phpstan/phpstan phpunit/phpunit
+composer require --dev "marclang64/backend-tooling:^1.3"
+vendor/bin/backend-tooling init
+composer update --lock
 ```
 
-The development tools are installed separately because Composer does not install the `require-dev` dependencies of other packages.
+On Windows PowerShell, run `vendor\bin\backend-tooling init`. If PowerShell strips the caret, use `composer --% require --dev marclang64/backend-tooling:^1.3`.
 
-## PHP-CS-Fixer
+All four quality tools are installed automatically. The initializer creates missing configuration files, adds Composer scripts, updates `.gitignore` and `.gitattributes`, and creates a sample test if no PHPUnit tests exist. Existing files and scripts are preserved. Review the generated paths for your project layout.
 
-Create `.php-cs-fixer.dist.php` in your project root:
-
-```php
-<?php
-
-declare(strict_types=1);
-
-$config = require __DIR__
-    . '/vendor/marclang64/backend-tooling/configs/php-cs-fixer.php';
-
-$finder = PhpCsFixer\Finder::create()
-    ->in(__DIR__ . '/src');
-
-return $config->setFinder($finder);
-```
-
-Check coding style:
-
-```bash
-vendor/bin/php-cs-fixer fix --dry-run --diff
-```
-
-Automatically fix formatting:
-
-```bash
-vendor/bin/php-cs-fixer fix
-```
-
-## PHPStan
-
-Create `phpstan.neon.dist` in your project root:
-
-```neon
-includes:
-    - vendor/marclang64/backend-tooling/configs/phpstan.neon
-
-parameters:
-    paths:
-        - src
-```
-
-Run static analysis:
-
-```bash
-vendor/bin/phpstan analyse --no-progress
-```
-
-The shared configuration currently uses PHPStan level 6.
-
-## PHPUnit
-
-PHPUnit is used to test this package and verify that consumer projects can execute their own test suites.
-
-Consumer projects maintain their own PHPUnit configuration.
-
-Run your project's tests using:
-
-```bash
-vendor/bin/phpunit
-```
-
-## Development
-
-Clone the repository and install its dependencies:
-
-```bash
-composer install
-```
-
-Available Composer scripts:
+## Available scripts
 
 | Command | Description |
 |---|---|
 | `composer lint:style` | Check PHP coding standards |
 | `composer fix:style` | Automatically fix coding style |
 | `composer lint:types` | Run PHPStan |
+| `composer lint:rector` | Preview refactorings without changing files |
+| `composer fix:rector` | Apply refactorings |
 | `composer test` | Run PHPUnit tests |
 
-## Continuous Integration
+## Configuration
 
-GitHub Actions automatically runs coding-style checks, static analysis, and PHPUnit tests on pushes and pull requests.
+The initializer generates `.php-cs-fixer.dist.php`, `phpstan.neon.dist`, `phpunit.xml.dist`, and `rector.php`. The shared PHP-CS-Fixer, PHPStan and Rector configuration lives in `configs/` inside the installed package. PHPUnit configuration is local to each project.
 
-The integration tests create isolated temporary consumer projects, install the package through Composer, and verify the tooling configurations.
+### Rector
 
-## Quick setup for consumer projects (v1.1.0)
+The default rule converts straightforward constructor property assignments into constructor property promotion. No broad rule sets are enabled by default. The generated configuration scans `src/` and `tests/` and imports the shared rules.
 
-Install the package as a development dependency, then initialize the project:
+To opt into additional PHP modernization rules, add `->withPhpSets()` to your local configuration. Rector can derive the PHP target from the project's Composer requirement. Review the proposed diff before applying any changes.
+
+Recommended workflow:
 
 ```bash
-composer require --dev marclang64/backend-tooling:^1.1
-vendor/bin/backend-tooling init
+composer lint:rector
+composer fix:rector
+composer fix:style
+composer lint:style
+composer lint:types
+composer test
 ```
 
-On Windows PowerShell, run `vendor\bin\backend-tooling init`.
+Commit the reviewed changes only after tests pass.
 
-The initializer creates `.php-cs-fixer.dist.php`, `phpstan.neon.dist`, and
-`phpunit.xml.dist`; registers missing Composer scripts; updates `.gitignore`;
-and creates `tests/ExampleTest.php` only when no PHPUnit tests exist.
-It creates `src/` when missing, does not overwrite existing configuration files,
-and can be run repeatedly. Review generated files for your project's layout.
+## Updating existing projects
 
-Then run `composer lint:style`, `composer lint:types`, and `composer test`.
+Update Backend Tooling, then rerun the initializer to add missing Rector configuration and scripts. Existing configurations are never overwritten.
 
-**Note:** The sample test verifies PHPUnit setup only; replace it with real
-project tests. Composer scripts are added to the root project's `composer.json`.
+```bash
+composer update marclang64/backend-tooling --with-all-dependencies
+vendor/bin/backend-tooling init
+composer update --lock
+```
+
+Ensure your existing version constraint permits v1.3.0. The generated sample test verifies PHPUnit setup only; replace it with real project tests.
+
+## Development
+
+Clone the repository and run `composer install`. The same quality scripts are available in the package repository.
+
+GitHub Actions runs coding style, static analysis, Rector dry-run and PHPUnit. Integration tests create temporary consumer projects, install only Backend Tooling and exercise the installed tools and initializer, including Rector's dry-run and apply behavior.
 
 ## License
 
