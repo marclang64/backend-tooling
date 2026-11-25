@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace BackendTooling\Setup;
+namespace PhpTooling\Setup;
 
 use RuntimeException;
 
@@ -47,7 +47,7 @@ final class Initializer
 
 declare(strict_types=1);
 
-$config = require __DIR__ . '/vendor/marclang64/backend-tooling/configs/php-cs-fixer.php';
+$config = require __DIR__ . '/vendor/marclang64/php-tooling/configs/php-cs-fixer.php';
 
 $finder = PhpCsFixer\Finder::create()
     ->in(__DIR__ . '/src');
@@ -64,7 +64,7 @@ CONFIG
 
         $this->createIfMissing($root . '/phpstan.neon.dist', <<<'CONFIG'
 includes:
-    - vendor/marclang64/backend-tooling/configs/phpstan.neon
+    - vendor/marclang64/php-tooling/configs/phpstan.neon
 
 parameters:
     paths:
@@ -106,7 +106,7 @@ return RectorConfig::configure()
         __DIR__ . '/src',
         __DIR__ . '/tests',
     ])
-    ->withSets([__DIR__ . '/vendor/marclang64/backend-tooling/configs/rector.php']);
+    ->withSets([__DIR__ . '/vendor/marclang64/php-tooling/configs/rector.php']);
 CONFIG
         );
 
@@ -152,7 +152,7 @@ CONFIG
         $this->updateGitignore($root);
         $this->updateGitattributes($root);
 
-        echo "\nBackend Tooling initialized.\n";
+        echo "\nPHP Tooling initialized.\n";
         echo "Run: composer update --lock\n";
         echo "Then: composer lint:style, composer lint:types, composer lint:rector, composer test\n";
     }
@@ -251,7 +251,7 @@ TEST
             $newContents .= "\n\n";
         }
 
-        $newContents .= "# Backend Tooling\n" . implode("\n", $missing) . "\n";
+        $newContents .= "# PHP Tooling\n" . implode("\n", $missing) . "\n";
 
         if (file_put_contents($path, $newContents) === false) {
             throw new RuntimeException('Could not update .gitignore.');
@@ -292,7 +292,7 @@ TEST
             $newContents .= "\n\n";
         }
 
-        $newContents .= "# Backend Tooling\n" . implode("\n", $missing) . "\n";
+        $newContents .= "# PHP Tooling\n" . implode("\n", $missing) . "\n";
 
         if (file_put_contents($path, $newContents) === false) {
             throw new RuntimeException('Could not update .gitattributes.');

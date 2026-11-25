@@ -1,4 +1,4 @@
-# Backend Tooling [![Version](https://img.shields.io/github/v/tag/marclang64/backend-tooling?sort=semver&label=version)](https://github.com/marclang64/backend-tooling/releases)
+# PHP Tooling [![Version](https://img.shields.io/github/v/tag/marclang64/php-tooling?sort=semver&label=version)](https://github.com/marclang64/php-tooling/releases)
 
 Reusable PHP development tooling for consistent code style, static analysis, automated refactoring, and testing.
 
@@ -25,21 +25,21 @@ Add the GitHub repository to your project's `composer.json`:
     "repositories": [
         {
             "type": "vcs",
-            "url": "https://github.com/marclang64/backend-tooling"
+            "url": "https://github.com/marclang64/php-tooling"
         }
     ]
 }
 ```
 
-Install the package as a development dependency after v1.3.0 is released:
+Install the package as a development dependency:
 
 ```bash
-composer require --dev "marclang64/backend-tooling:^1.3"
-vendor/bin/backend-tooling init
+composer require --dev "marclang64/php-tooling:^2.0"
+vendor/bin/php-tooling init
 composer update --lock
 ```
 
-On Windows PowerShell, run `vendor\bin\backend-tooling init`. If PowerShell strips the caret, use `composer --% require --dev marclang64/backend-tooling:^1.3`.
+On Windows PowerShell, run `vendor\bin\php-tooling init`. If PowerShell strips the caret, use `composer --% require --dev marclang64/php-tooling:^2.0`.
 
 All four quality tools are installed automatically. The initializer creates missing configuration files, adds Composer scripts, updates `.gitignore` and `.gitattributes`, and creates a sample test if no PHPUnit tests exist. Existing files and scripts are preserved. Review the generated paths for your project layout.
 
@@ -77,23 +77,34 @@ composer test
 
 Commit the reviewed changes only after tests pass.
 
-## Updating existing projects
+## Migrating from Backend Tooling v1.x
 
-Update Backend Tooling, then rerun the initializer to add missing Rector configuration and scripts. Existing configurations are never overwritten.
+PHP Tooling v2.0.0 replaces the former `marclang64/backend-tooling` package. The package name, CLI and PHP namespace have changed; quality scripts and shared rules remain unchanged.
+
+In your project's `composer.json`, change the VCS repository URL to `https://github.com/marclang64/php-tooling` and replace the old development dependency with `"marclang64/php-tooling": "^2.0"`. Then run:
 
 ```bash
-composer update marclang64/backend-tooling --with-all-dependencies
-vendor/bin/backend-tooling init
-composer update --lock
+composer update marclang64/backend-tooling marclang64/php-tooling --with-all-dependencies
 ```
 
-Ensure your existing version constraint permits v1.3.0. The generated sample test verifies PHPUnit setup only; replace it with real project tests.
+In existing `.php-cs-fixer.dist.php`, `phpstan.neon.dist` and `rector.php` files, replace `vendor/marclang64/backend-tooling/` with `vendor/marclang64/php-tooling/`. Update any custom references to the old `BackendTooling` namespace or `backend-tooling` CLI as well. Preserve your project-specific settings.
+
+```bash
+vendor/bin/php-tooling init
+composer update --lock
+composer lint:style
+composer lint:types
+composer lint:rector
+composer test
+```
+
+The initializer deliberately does not overwrite existing configuration files. The generated sample test verifies PHPUnit setup only; replace it with real project tests.
 
 ## Development
 
 Clone the repository and run `composer install`. The same quality scripts are available in the package repository.
 
-GitHub Actions runs coding style, static analysis, Rector dry-run and PHPUnit. Integration tests create temporary consumer projects, install only Backend Tooling and exercise the installed tools and initializer, including Rector's dry-run and apply behavior.
+GitHub Actions runs coding style, static analysis, Rector dry-run and PHPUnit. Integration tests create temporary consumer projects, install only PHP Tooling and exercise the installed tools and initializer, including Rector's dry-run and apply behavior.
 
 ## License
 

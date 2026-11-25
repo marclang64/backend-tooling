@@ -1,15 +1,15 @@
 {
-    "name": "marclang64/backend-tooling",
+    "name": "marclang64/php-tooling",
     "description": "Reusable tooling configurations for modern PHP development",
     "type": "library",
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "BackendTooling\\": "src/"
+            "PhpTooling\\": "src/"
         }
     },
     "bin": [
-        "bin/backend-tooling"
+        "bin/php-tooling"
     ],
     "require": {
         "php": "^8.5",

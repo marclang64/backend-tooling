@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use BackendTooling\Setup\Initializer;
+use PhpTooling\Setup\Initializer;
 use PHPUnit\Framework\TestCase;
 
 final class InitializerTest extends TestCase
@@ -11,7 +11,7 @@ final class InitializerTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->directory = sys_get_temp_dir() . '/backend-tooling-init-' . bin2hex(random_bytes(8));
+        $this->directory = sys_get_temp_dir() . '/php-tooling-init-' . bin2hex(random_bytes(8));
         mkdir($this->directory, 0777, true);
         file_put_contents($this->directory . '/composer.json', "{\n    \"name\": \"example/project\"\n}\n");
     }
@@ -46,6 +46,13 @@ final class InitializerTest extends TestCase
 
         foreach ($expectedFiles as $file) {
             self::assertFileExists($this->directory . '/' . $file);
+        }
+
+        foreach (['.php-cs-fixer.dist.php', 'phpstan.neon.dist', 'rector.php'] as $file) {
+            self::assertStringContainsString(
+                'vendor/marclang64/php-tooling/configs/',
+                (string) file_get_contents($this->directory . '/' . $file)
+            );
         }
 
         $composer = json_decode(

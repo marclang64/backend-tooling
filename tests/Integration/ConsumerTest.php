@@ -14,7 +14,7 @@ final class ConsumerTest extends TestCase
         parent::setUp();
 
         $this->tempDir = sys_get_temp_dir()
-            . '/backend-tooling-test-'
+            . '/php-tooling-test-'
             . bin2hex(random_bytes(8));
 
         if (!mkdir($this->tempDir, 0777, true)) {
@@ -66,19 +66,19 @@ final class ConsumerTest extends TestCase
         );
     }
 
-    public function testCanInstallBackendTooling(): void
+    public function testCanInstallPhpTooling(): void
     {
         $this->createConsumerProject();
         $this->installConsumerDependencies();
 
         $this->assertFileExists(
             $this->tempDir
-            . '/vendor/marclang64/backend-tooling/configs/phpstan.neon'
+            . '/vendor/marclang64/php-tooling/configs/phpstan.neon'
         );
 
         $this->assertFileExists(
             $this->tempDir
-            . '/vendor/marclang64/backend-tooling/configs/php-cs-fixer.php'
+            . '/vendor/marclang64/php-tooling/configs/php-cs-fixer.php'
         );
     }
 
@@ -108,7 +108,7 @@ final class ConsumerTest extends TestCase
 declare(strict_types=1);
 
 $config = require __DIR__
-    . '/vendor/marclang64/backend-tooling/configs/php-cs-fixer.php';
+    . '/vendor/marclang64/php-tooling/configs/php-cs-fixer.php';
 
 $finder = PhpCsFixer\Finder::create()
     ->in(__DIR__ . '/src');
@@ -159,7 +159,7 @@ PHP;
         $packagePath = dirname(__DIR__, 2);
 
         $composerJson = [
-            'name' => 'marclang64/backend-tooling-test',
+            'name' => 'marclang64/php-tooling-test',
             'type' => 'project',
             'repositories' => [
                 [
@@ -172,7 +172,7 @@ PHP;
             ],
             'require' => ['php' => '^8.5'],
             'require-dev' => [
-                'marclang64/backend-tooling' => '@dev',
+                'marclang64/php-tooling' => '@dev',
             ],
         ];
 
@@ -246,7 +246,7 @@ PHP;
 
         $config = <<<'NEON'
     includes:
-        - vendor/marclang64/backend-tooling/configs/phpstan.neon
+        - vendor/marclang64/php-tooling/configs/phpstan.neon
 
     parameters:
         paths:
@@ -309,7 +309,7 @@ PHP;
 
         $config = <<<'NEON'
     includes:
-        - vendor/marclang64/backend-tooling/configs/phpstan.neon
+        - vendor/marclang64/php-tooling/configs/phpstan.neon
 
     parameters:
         paths:
@@ -417,7 +417,7 @@ PHP;
 
         $this->assertFileExists($this->tempDir . '/vendor/bin/rector');
         $init = new Process(
-            [PHP_BINARY, 'vendor/bin/backend-tooling', 'init'],
+            [PHP_BINARY, 'vendor/bin/php-tooling', 'init'],
             $this->tempDir
         );
         $init->mustRun();

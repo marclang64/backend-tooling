@@ -3,7 +3,7 @@
 
 declare(strict_types=1);
 
-use BackendTooling\Setup\Initializer;
+use PhpTooling\Setup\Initializer;
 
 $autoload = dirname(__DIR__, 3) . '/autoload.php';
 
@@ -21,7 +21,7 @@ require $autoload;
 $command = $argv[1] ?? null;
 
 if ($command !== 'init') {
-    fwrite(STDERR, "Usage: backend-tooling init\n");
+    fwrite(STDERR, "Usage: php-tooling init\n");
     exit(1);
 }
 
